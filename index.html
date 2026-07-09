@@ -1,1 +1,102 @@
-ggujjhhhh
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Banana Beats MP3 Player</title>
+<style>
+body{
+    margin:0;
+    font-family:Arial,sans-serif;
+    background:#ffe135;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+.player{
+    background:white;
+    padding:20px;
+    border-radius:20px;
+    box-shadow:0 10px 20px rgba(0,0,0,.2);
+    width:320px;
+    text-align:center;
+}
+h1{
+    margin-top:0;
+}
+button{
+    margin:5px;
+    padding:10px 16px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:#f7b500;
+    color:white;
+    font-size:16px;
+}
+button:hover{
+    background:#e09d00;
+}
+#track{
+    margin:15px 0;
+    font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<div class="player">
+    <h1>🍌 Banana Beats</h1>
+
+    <div id="track">No song playing</div>
+
+    <audio id="audio" controls style="width:100%;"></audio>
+
+    <br>
+
+    <button onclick="playTrack()">▶ Play</button>
+    <button onclick="shuffleTrack()">🔀 Shuffle</button>
+</div>
+
+<script>
+const songs = [
+    "song1.mp3",
+    "song2.mp3",
+    "song3.mp3"
+];
+
+const audio = document.getElementById("audio");
+const track = document.getElementById("track");
+
+let current = 0;
+
+function loadSong(i){
+    current = i;
+    audio.src = songs[current];
+    track.textContent = songs[current];
+}
+
+function playTrack(){
+    if(!audio.src) loadSong(current);
+    audio.play();
+}
+
+function shuffleTrack(){
+    let next;
+    do{
+        next = Math.floor(Math.random()*songs.length);
+    }while(next===current && songs.length>1);
+
+    loadSong(next);
+    audio.play();
+}
+
+audio.addEventListener("ended", shuffleTrack);
+
+loadSong(0);
+</script>
+
+</body>
+</html>
+
