@@ -141,11 +141,47 @@ font-weight:bold;
 </div>
 
 <ul id="playlist"></ul>
+<h3>Playlist</h3>
+
+<select id="playlist" size="10" style="
+width:100%;
+height:220px;
+border-radius:10px;
+font-size:16px;
+"></select>
 
 <script>
 </script>
 </div>
 </body>
 </html>
+const playlist = document.getElementById("playlist");
+
+picker.onchange = () => {
+    songs = Array.from(picker.files);
+
+    playlist.innerHTML = "";
+
+    songs.forEach((song, i) => {
+        const option = document.createElement("option");
+        option.text = song.name;
+        option.value = i;
+        playlist.add(option);
+    });
+
+    if (songs.length) load(0);
+};
+
+playlist.onchange = () => {
+    load(playlist.selectedIndex);
+    play();
+};
+
+function load(i) {
+    index = i;
+    audio.src = URL.createObjectURL(songs[index]);
+    now.textContent = songs[index].name;
+    playlist.selectedIndex = index;
+}
 
 
