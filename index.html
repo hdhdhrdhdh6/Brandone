@@ -1,362 +1,71 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Glass MP3 Player</title>
-
-<style>
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Segoe UI,sans-serif;
-}
-
-body{
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:linear-gradient(135deg,#141e30,#243b55);
-overflow:hidden;
-}
-
-.player{
-width:420px;
-backdrop-filter:blur(18px);
-background:rgba(255,255,255,.08);
-border:1px solid rgba(255,255,255,.15);
-border-radius:25px;
-padding:20px;
-color:white;
-box-shadow:0 20px 50px rgba(0,0,0,.4);
-}
-
-h2{
-text-align:center;
-margin-bottom:10px;
-font-weight:600;
-}
-
-#title{
-font-size:18px;
-margin:15px 0;
-text-align:center;
-white-space:nowrap;
-overflow:hidden;
-text-overflow:ellipsis;
-}
-
-.progress{
-width:100%;
-height:8px;
-background:#555;
-border-radius:10px;
-cursor:pointer;
-margin:10px 0;
-overflow:hidden;
-}
-
-.progress div{
-height:100%;
-width:0%;
-background:linear-gradient(90deg,#00f2fe,#4facfe);
-}
-
-.time{
-display:flex;
-justify-content:space-between;
-font-size:12px;
-margin-bottom:15px;
-}
-
-.controls{
-display:flex;
-justify-content:center;
-gap:12px;
-margin:15px 0;
-flex-wrap:wrap;
-}
-
-button{
-width:55px;
-height:55px;
-border:none;
-border-radius:50%;
-background:rgba(255,255,255,.12);
-color:white;
-font-size:20px;
-cursor:pointer;
-transition:.25s;
-}
-
-button:hover{
-background:#00c6ff;
-transform:scale(1.08);
-}
-
-.options{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-top:10px;
-}
-
-input[type=range]{
-width:130px;
-}
-
-.playlist{
-margin-top:15px;
-max-height:220px;
-overflow:auto;
-border-radius:12px;
-background:rgba(255,255,255,.05);
-}
-
-.song{
-padding:10px;
-cursor:pointer;
-border-bottom:1px solid rgba(255,255,255,.08);
-transition:.2s;
-}
-
-.song:hover{
-background:rgba(255,255,255,.15);
-}
-
-.active{
-background:#00c6ff;
-}
-
-input[type=file]{
-margin-top:15px;
-width:100%;
-color:white;
-}
-</style>
+<title>GitHub TXT Database</title>
 </head>
 <body>
 
-<div class="player">
+<h2>GitHub TXT Database</h2>
 
-<h2>🎵 MP3 Player</h2>
+<textarea id="input" rows="5" cols="50"></textarea><br><br>
 
-<div id="title">No Song Loaded</div>
-
-<div class="progress" id="progress">
-<div id="bar"></div>
-</div>
-
-<div class="time">
-<span id="current">0:00</span>
-<span id="duration">0:00</span>
-</div>
-
-<div class="controls">
-<button onclick="prevSong()">⏮</button>
-<button onclick="togglePlay()" id="playBtn">▶</button>
-<button onclick="nextSong()">⏭</button>
-<button onclick="toggleLoop()" id="loopBtn">🔁</button>
-<button onclick="shuffle()">🔀</button>
-</div>
-
-<div class="options">
-<label>🔊</label>
-<input type="range" min="0" max="1" step="0.01" value="1" id="volume">
-</div>
-
-<input type="file" id="picker" multiple accept=".mp3">
-
-<div class="playlist" id="playlist"></div>
-
-<audio id="audio"></audio>
-
-</div>
+<button onclick="save()">Save</button>
 
 <script>
+const OWNER = "YOUR_USERNAME";
+const REPO = "YOUR_REPO";
+const FILE = "database.txt";
+const BRANCH = "main";
 
-const audio=document.getElementById("audio");
-const picker=document.getElementById("picker");
-const playlist=document.getElementById("playlist");
+// WARNING: Anyone can see this token.
+const TOKEN = "github_pat_xxxxxxxxxxxxxxxxx";
 
-const title=document.getElementById("title");
-const playBtn=document.getElementById("playBtn");
-const loopBtn=document.getElementById("loopBtn");
+async function save() {
 
-const progress=document.getElementById("progress");
-const bar=document.getElementById("bar");
+    const api =
+      `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
 
-const current=document.getElementById("current");
-const duration=document.getElementById("duration");
+    // Get current file
+    const response = await fetch(api, {
+        headers: {
+            Authorization: "Bearer " + TOKEN,
+            Accept: "application/vnd.github+json"
+        }
+    });
 
-let songs=[];
-let index=0;
-let looping=false;
+    let oldText = "";
+    let sha = null;
 
-picker.onchange=e=>{
+    if (response.ok) {
+        const json = await response.json();
+        oldText = atob(json.content.replace(/\n/g, ""));
+        sha = json.sha;
+    }
 
-songs=[];
+    const newText =
+        oldText +
+        document.getElementById("input").value +
+        "\n";
 
-playlist.innerHTML="";
+    await fetch(api, {
+        method: "PUT",
+        headers: {
+            Authorization: "Bearer " + TOKEN,
+            Accept: "application/vnd.github+json"
+        },
+        body: JSON.stringify({
+            message: "Database update",
+            content: btoa(newText),
+            branch: BRANCH,
+            sha: sha
+        })
+    });
 
-[...e.target.files].forEach((file,i)=>{
-
-songs.push({
-name:file.name,
-url:URL.createObjectURL(file)
-});
-
-const div=document.createElement("div");
-div.className="song";
-div.innerText=file.name;
-
-div.onclick=()=>loadSong(i,true);
-
-playlist.appendChild(div);
-
-});
-
-if(songs.length)
-loadSong(0,false);
-
+    alert("Saved!");
 }
-
-function loadSong(i,autoplay){
-
-index=i;
-
-audio.src=songs[i].url;
-
-title.innerText=songs[i].name;
-
-document.querySelectorAll(".song").forEach((e,n)=>{
-e.classList.toggle("active",n==i);
-});
-
-if(autoplay){
-audio.play();
-playBtn.innerHTML="⏸";
-}
-
-}
-
-function togglePlay(){
-
-if(!audio.src)return;
-
-if(audio.paused){
-
-audio.play();
-playBtn.innerHTML="⏸";
-
-}else{
-
-audio.pause();
-playBtn.innerHTML="▶";
-
-}
-
-}
-
-function nextSong(){
-
-if(!songs.length)return;
-
-index++;
-
-if(index>=songs.length)index=0;
-
-loadSong(index,true);
-
-}
-
-function prevSong(){
-
-if(!songs.length)return;
-
-index--;
-
-if(index<0)index=songs.length-1;
-
-loadSong(index,true);
-
-}
-
-function shuffle(){
-
-if(!songs.length)return;
-
-let n=Math.floor(Math.random()*songs.length);
-
-loadSong(n,true);
-
-}
-
-function toggleLoop(){
-
-looping=!looping;
-
-audio.loop=looping;
-
-loopBtn.style.background=
-looping?"#00c6ff":"rgba(255,255,255,.12)";
-
-}
-
-audio.addEventListener("timeupdate",()=>{
-
-let p=(audio.currentTime/audio.duration)*100||0;
-
-bar.style.width=p+"%";
-
-current.innerText=format(audio.currentTime);
-
-duration.innerText=format(audio.duration);
-
-});
-
-progress.onclick=e=>{
-
-if(!audio.duration)return;
-
-const rect=progress.getBoundingClientRect();
-
-const x=e.clientX-rect.left;
-
-audio.currentTime=x/rect.width*audio.duration;
-
-}
-
-audio.onended=()=>{
-
-if(!looping)
-nextSong();
-
-}
-
-document.getElementById("volume").oninput=e=>{
-
-audio.volume=e.target.value;
-
-}
-
-function format(s){
-
-if(isNaN(s))return"0:00";
-
-let m=Math.floor(s/60);
-
-let sec=Math.floor(s%60);
-
-if(sec<10)sec="0"+sec;
-
-return m+":"+sec;
-
-}
-
 </script>
 
 </body>
 </html>
+
