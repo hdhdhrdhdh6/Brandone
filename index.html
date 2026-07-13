@@ -1,71 +1,356 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>GitHub TXT Database</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bowling Penguins</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:'Fredoka',sans-serif;
+    background:
+        radial-gradient(circle at top,#3fa9ff,#0b2047 70%);
+    color:white;
+    overflow-x:hidden;
+    perspective:1400px;
+}
+
+body::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(white 1px,transparent 2px);
+    background-size:120px 120px;
+    opacity:.15;
+    animation:stars 30s linear infinite;
+    pointer-events:none;
+}
+
+@keyframes stars{
+    from{transform:translateY(0);}
+    to{transform:translateY(120px);}
+}
+
+.hero{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    position:relative;
+}
+
+h1{
+    font-size:clamp(3rem,8vw,6rem);
+    text-shadow:0 10px 30px rgba(0,0,0,.4);
+    margin-bottom:20px;
+}
+
+p{
+    font-size:1.2rem;
+    max-width:650px;
+    opacity:.9;
+    margin-bottom:40px;
+}
+
+.scene{
+    width:900px;
+    max-width:95vw;
+    height:380px;
+    position:relative;
+    transform-style:preserve-3d;
+    transform:rotateX(60deg);
+}
+
+/* Bowling Lane */
+
+.lane{
+    position:absolute;
+    width:100%;
+    height:220px;
+    background:
+      repeating-linear-gradient(
+        90deg,
+        #d7a15f 0 80px,
+        #e6bb7f 80px 160px
+      );
+    border-radius:25px;
+    transform:
+        rotateX(90deg)
+        translateZ(-90px);
+    box-shadow:
+      0 0 50px rgba(255,220,120,.25),
+      inset 0 0 25px rgba(0,0,0,.3);
+}
+
+/* Penguins */
+
+.penguin{
+    position:absolute;
+    bottom:105px;
+    width:80px;
+    height:120px;
+    transform-style:preserve-3d;
+    animation:
+        waddle 2.2s ease-in-out infinite,
+        slide 8s linear infinite;
+}
+
+.penguin:nth-child(2){
+    animation-delay:.4s;
+}
+.penguin:nth-child(3){
+    animation-delay:.9s;
+}
+
+.body{
+    position:absolute;
+    width:70px;
+    height:95px;
+    left:5px;
+    top:15px;
+    border-radius:45px;
+    background:linear-gradient(#222,#111);
+}
+
+.belly{
+    position:absolute;
+    width:44px;
+    height:58px;
+    background:white;
+    border-radius:30px;
+    left:18px;
+    top:28px;
+}
+
+.head{
+    position:absolute;
+    width:58px;
+    height:58px;
+    left:11px;
+    border-radius:50%;
+    background:#111;
+}
+
+.eye{
+    position:absolute;
+    width:8px;
+    height:8px;
+    background:white;
+    border-radius:50%;
+    top:20px;
+}
+.eye.left{left:16px;}
+.eye.right{right:16px;}
+
+.beak{
+    position:absolute;
+    width:16px;
+    height:12px;
+    background:#ffb347;
+    left:21px;
+    top:30px;
+    clip-path:polygon(0 0,100% 50%,0 100%);
+}
+
+.flipper{
+    position:absolute;
+    width:18px;
+    height:50px;
+    background:#1d1d1d;
+    top:35px;
+    border-radius:20px;
+    animation:flap 1s ease-in-out infinite;
+}
+
+.flipper.left{
+    left:-8px;
+    transform-origin:top;
+}
+.flipper.right{
+    right:-8px;
+    transform-origin:top;
+    animation-delay:.5s;
+}
+
+.ball{
+    position:absolute;
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    background:
+      radial-gradient(circle at 30% 30%,#7cf,#0058ff);
+    bottom:-12px;
+    left:25px;
+    animation:roll .8s linear infinite;
+}
+
+/* Pins */
+
+.pin{
+    position:absolute;
+    width:26px;
+    height:70px;
+    bottom:110px;
+    right:70px;
+    background:white;
+    border-radius:20px;
+    transform-origin:bottom;
+    animation:fall 4s infinite;
+}
+
+.pin::before{
+    content:"";
+    position:absolute;
+    top:18px;
+    width:100%;
+    height:8px;
+    background:red;
+}
+
+.pin:nth-child(5){right:105px;animation-delay:.2s;}
+.pin:nth-child(6){right:140px;animation-delay:.4s;}
+.pin:nth-child(7){right:87px;bottom:150px;animation-delay:.6s;}
+
+/* Button */
+
+button{
+    margin-top:50px;
+    padding:18px 42px;
+    border:none;
+    border-radius:50px;
+    background:#00c6ff;
+    color:white;
+    font-size:1.1rem;
+    cursor:pointer;
+    transition:.35s;
+    box-shadow:0 12px 30px rgba(0,0,0,.25);
+}
+
+button:hover{
+    transform:translateY(-5px) scale(1.05);
+    background:#32d8ff;
+}
+
+@keyframes flap{
+    50%{transform:rotateZ(25deg);}
+}
+
+@keyframes waddle{
+    50%{
+        transform:
+          translateY(-8px)
+          rotateY(18deg);
+    }
+}
+
+@keyframes slide{
+    0%{left:-100px;}
+    70%{left:650px;}
+    100%{left:980px;}
+}
+
+@keyframes roll{
+    to{transform:rotate(360deg);}
+}
+
+@keyframes fall{
+    0%,70%{
+        transform:rotate(0deg);
+    }
+    82%{
+        transform:rotate(85deg);
+    }
+    100%{
+        transform:rotate(85deg);
+    }
+}
+
+@keyframes stars{
+    from{transform:translateY(0);}
+    to{transform:translateY(120px);}
+}
+</style>
 </head>
+
 <body>
 
-<h2>GitHub TXT Database</h2>
+<section class="hero">
 
-<textarea id="input" rows="5" cols="50"></textarea><br><br>
+<h1>🐧 Bowling Penguins 🎳</h1>
 
-<button onclick="save()">Save</button>
+<p>
+Tiny penguins. Giant bowling dreams.
+Watch these adorable bowlers waddle down the lane in a playful
+3D-inspired animated scene built entirely with HTML and CSS.
+</p>
 
-<script>
-const OWNER = "YOUR_USERNAME";
-const REPO = "YOUR_REPO";
-const FILE = "database.txt";
-const BRANCH = "main";
+<div class="scene">
 
-// WARNING: Anyone can see this token.
-const TOKEN = "github_pat_xxxxxxxxxxxxxxxxx";
+<div class="lane"></div>
 
-async function save() {
+<div class="penguin" style="left:0px;">
+<div class="head">
+<div class="eye left"></div>
+<div class="eye right"></div>
+<div class="beak"></div>
+</div>
+<div class="body">
+<div class="belly"></div>
+<div class="flipper left"></div>
+<div class="flipper right"></div>
+<div class="ball"></div>
+</div>
+</div>
 
-    const api =
-      `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FILE}`;
+<div class="penguin" style="left:-120px;transform:scale(.9);">
+<div class="head">
+<div class="eye left"></div>
+<div class="eye right"></div>
+<div class="beak"></div>
+</div>
+<div class="body">
+<div class="belly"></div>
+<div class="flipper left"></div>
+<div class="flipper right"></div>
+</div>
+</div>
 
-    // Get current file
-    const response = await fetch(api, {
-        headers: {
-            Authorization: "Bearer " + TOKEN,
-            Accept: "application/vnd.github+json"
-        }
-    });
+<div class="penguin" style="left:-240px;transform:scale(.8);">
+<div class="head">
+<div class="eye left"></div>
+<div class="eye right"></div>
+<div class="beak"></div>
+</div>
+<div class="body">
+<div class="belly"></div>
+<div class="flipper left"></div>
+<div class="flipper right"></div>
+</div>
+</div>
 
-    let oldText = "";
-    let sha = null;
+<div class="pin"></div>
+<div class="pin"></div>
+<div class="pin"></div>
+<div class="pin"></div>
 
-    if (response.ok) {
-        const json = await response.json();
-        oldText = atob(json.content.replace(/\n/g, ""));
-        sha = json.sha;
-    }
+</div>
 
-    const newText =
-        oldText +
-        document.getElementById("input").value +
-        "\n";
+<button onclick="window.scrollTo({top:0,behavior:'smooth'})">
+🎳 Bowl Again
+</button>
 
-    await fetch(api, {
-        method: "PUT",
-        headers: {
-            Authorization: "Bearer " + TOKEN,
-            Accept: "application/vnd.github+json"
-        },
-        body: JSON.stringify({
-            message: "Database update",
-            content: btoa(newText),
-            branch: BRANCH,
-            sha: sha
-        })
-    });
-
-    alert("Saved!");
-}
-</script>
+</section>
 
 </body>
 </html>
-
