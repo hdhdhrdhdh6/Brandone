@@ -1,356 +1,389 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Bowling Penguins</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>MP3 Player</title>
 
 <style>
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
+box-sizing:border-box;
+margin:0;
+padding:0;
+font-family:Arial,Helvetica,sans-serif;
 }
 
 body{
-    font-family:'Fredoka',sans-serif;
-    background:
-        radial-gradient(circle at top,#3fa9ff,#0b2047 70%);
-    color:white;
-    overflow-x:hidden;
-    perspective:1400px;
+background:#111;
+color:white;
+display:flex;
+justify-content:center;
+padding:20px;
 }
 
-body::before{
-    content:"";
-    position:fixed;
-    inset:0;
-    background:
-      radial-gradient(white 1px,transparent 2px);
-    background-size:120px 120px;
-    opacity:.15;
-    animation:stars 30s linear infinite;
-    pointer-events:none;
+.player{
+width:420px;
+background:#1d1d1d;
+border-radius:20px;
+padding:20px;
+box-shadow:0 0 20px black;
 }
 
-@keyframes stars{
-    from{transform:translateY(0);}
-    to{transform:translateY(120px);}
+h2{
+text-align:center;
+margin-bottom:15px;
 }
 
-.hero{
-    min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    position:relative;
+input[type=file]{
+width:100%;
+margin-bottom:15px;
 }
 
-h1{
-    font-size:clamp(3rem,8vw,6rem);
-    text-shadow:0 10px 30px rgba(0,0,0,.4);
-    margin-bottom:20px;
+.now{
+font-size:18px;
+text-align:center;
+margin-bottom:10px;
+word-break:break-word;
 }
 
-p{
-    font-size:1.2rem;
-    max-width:650px;
-    opacity:.9;
-    margin-bottom:40px;
+.controls{
+display:flex;
+justify-content:center;
+gap:10px;
+margin:15px 0;
+flex-wrap:wrap;
 }
-
-.scene{
-    width:900px;
-    max-width:95vw;
-    height:380px;
-    position:relative;
-    transform-style:preserve-3d;
-    transform:rotateX(60deg);
-}
-
-/* Bowling Lane */
-
-.lane{
-    position:absolute;
-    width:100%;
-    height:220px;
-    background:
-      repeating-linear-gradient(
-        90deg,
-        #d7a15f 0 80px,
-        #e6bb7f 80px 160px
-      );
-    border-radius:25px;
-    transform:
-        rotateX(90deg)
-        translateZ(-90px);
-    box-shadow:
-      0 0 50px rgba(255,220,120,.25),
-      inset 0 0 25px rgba(0,0,0,.3);
-}
-
-/* Penguins */
-
-.penguin{
-    position:absolute;
-    bottom:105px;
-    width:80px;
-    height:120px;
-    transform-style:preserve-3d;
-    animation:
-        waddle 2.2s ease-in-out infinite,
-        slide 8s linear infinite;
-}
-
-.penguin:nth-child(2){
-    animation-delay:.4s;
-}
-.penguin:nth-child(3){
-    animation-delay:.9s;
-}
-
-.body{
-    position:absolute;
-    width:70px;
-    height:95px;
-    left:5px;
-    top:15px;
-    border-radius:45px;
-    background:linear-gradient(#222,#111);
-}
-
-.belly{
-    position:absolute;
-    width:44px;
-    height:58px;
-    background:white;
-    border-radius:30px;
-    left:18px;
-    top:28px;
-}
-
-.head{
-    position:absolute;
-    width:58px;
-    height:58px;
-    left:11px;
-    border-radius:50%;
-    background:#111;
-}
-
-.eye{
-    position:absolute;
-    width:8px;
-    height:8px;
-    background:white;
-    border-radius:50%;
-    top:20px;
-}
-.eye.left{left:16px;}
-.eye.right{right:16px;}
-
-.beak{
-    position:absolute;
-    width:16px;
-    height:12px;
-    background:#ffb347;
-    left:21px;
-    top:30px;
-    clip-path:polygon(0 0,100% 50%,0 100%);
-}
-
-.flipper{
-    position:absolute;
-    width:18px;
-    height:50px;
-    background:#1d1d1d;
-    top:35px;
-    border-radius:20px;
-    animation:flap 1s ease-in-out infinite;
-}
-
-.flipper.left{
-    left:-8px;
-    transform-origin:top;
-}
-.flipper.right{
-    right:-8px;
-    transform-origin:top;
-    animation-delay:.5s;
-}
-
-.ball{
-    position:absolute;
-    width:28px;
-    height:28px;
-    border-radius:50%;
-    background:
-      radial-gradient(circle at 30% 30%,#7cf,#0058ff);
-    bottom:-12px;
-    left:25px;
-    animation:roll .8s linear infinite;
-}
-
-/* Pins */
-
-.pin{
-    position:absolute;
-    width:26px;
-    height:70px;
-    bottom:110px;
-    right:70px;
-    background:white;
-    border-radius:20px;
-    transform-origin:bottom;
-    animation:fall 4s infinite;
-}
-
-.pin::before{
-    content:"";
-    position:absolute;
-    top:18px;
-    width:100%;
-    height:8px;
-    background:red;
-}
-
-.pin:nth-child(5){right:105px;animation-delay:.2s;}
-.pin:nth-child(6){right:140px;animation-delay:.4s;}
-.pin:nth-child(7){right:87px;bottom:150px;animation-delay:.6s;}
-
-/* Button */
 
 button{
-    margin-top:50px;
-    padding:18px 42px;
-    border:none;
-    border-radius:50px;
-    background:#00c6ff;
-    color:white;
-    font-size:1.1rem;
-    cursor:pointer;
-    transition:.35s;
-    box-shadow:0 12px 30px rgba(0,0,0,.25);
+background:#333;
+border:none;
+color:white;
+padding:10px 15px;
+border-radius:10px;
+cursor:pointer;
+font-size:16px;
 }
 
 button:hover{
-    transform:translateY(-5px) scale(1.05);
-    background:#32d8ff;
+background:#555;
 }
 
-@keyframes flap{
-    50%{transform:rotateZ(25deg);}
+button.active{
+background:#008cff;
 }
 
-@keyframes waddle{
-    50%{
-        transform:
-          translateY(-8px)
-          rotateY(18deg);
-    }
+.progress{
+width:100%;
+margin:10px 0;
 }
 
-@keyframes slide{
-    0%{left:-100px;}
-    70%{left:650px;}
-    100%{left:980px;}
+#seek{
+width:100%;
 }
 
-@keyframes roll{
-    to{transform:rotate(360deg);}
+.time{
+display:flex;
+justify-content:space-between;
+font-size:14px;
+margin-bottom:10px;
 }
 
-@keyframes fall{
-    0%,70%{
-        transform:rotate(0deg);
-    }
-    82%{
-        transform:rotate(85deg);
-    }
-    100%{
-        transform:rotate(85deg);
-    }
+.volume{
+margin-bottom:15px;
 }
 
-@keyframes stars{
-    from{transform:translateY(0);}
-    to{transform:translateY(120px);}
+.volume input{
+width:100%;
+}
+
+.playlist{
+max-height:250px;
+overflow:auto;
+border-top:1px solid #444;
+padding-top:10px;
+}
+
+.song{
+padding:8px;
+cursor:pointer;
+border-radius:8px;
+}
+
+.song:hover{
+background:#333;
+}
+
+.song.active{
+background:#008cff;
 }
 </style>
-</head>
 
+</head>
 <body>
 
-<section class="hero">
+<div class="player">
 
-<h1>🐧 Bowling Penguins 🎳</h1>
+<h2>MP3 Player</h2>
 
-<p>
-Tiny penguins. Giant bowling dreams.
-Watch these adorable bowlers waddle down the lane in a playful
-3D-inspired animated scene built entirely with HTML and CSS.
-</p>
+<input type="file" id="files" accept="audio/*" multiple>
 
-<div class="scene">
-
-<div class="lane"></div>
-
-<div class="penguin" style="left:0px;">
-<div class="head">
-<div class="eye left"></div>
-<div class="eye right"></div>
-<div class="beak"></div>
-</div>
-<div class="body">
-<div class="belly"></div>
-<div class="flipper left"></div>
-<div class="flipper right"></div>
-<div class="ball"></div>
-</div>
+<div class="now" id="title">
+No song loaded
 </div>
 
-<div class="penguin" style="left:-120px;transform:scale(.9);">
-<div class="head">
-<div class="eye left"></div>
-<div class="eye right"></div>
-<div class="beak"></div>
-</div>
-<div class="body">
-<div class="belly"></div>
-<div class="flipper left"></div>
-<div class="flipper right"></div>
-</div>
+<div class="progress">
+<input id="seek" type="range" value="0" min="0" max="100">
 </div>
 
-<div class="penguin" style="left:-240px;transform:scale(.8);">
-<div class="head">
-<div class="eye left"></div>
-<div class="eye right"></div>
-<div class="beak"></div>
-</div>
-<div class="body">
-<div class="belly"></div>
-<div class="flipper left"></div>
-<div class="flipper right"></div>
-</div>
+<div class="time">
+<span id="current">0:00</span>
+<span id="duration">0:00</span>
 </div>
 
-<div class="pin"></div>
-<div class="pin"></div>
-<div class="pin"></div>
-<div class="pin"></div>
+<div class="controls">
+<button id="prev">⏮</button>
+<button id="play">▶️</button>
+<button id="next">⏭</button>
+<button id="shuffle">🔀</button>
+<button id="repeat">🔁</button>
+</div>
+
+<div class="volume">
+<input id="volume" type="range" min="0" max="1" step="0.01" value="1">
+</div>
+
+<div class="playlist" id="playlist"></div>
+
+<audio id="audio"></audio>
 
 </div>
 
-<button onclick="window.scrollTo({top:0,behavior:'smooth'})">
-🎳 Bowl Again
-</button>
+<script>
 
-</section>
+const audio=document.getElementById("audio");
+
+const files=document.getElementById("files");
+
+const playlistDiv=document.getElementById("playlist");
+
+const playBtn=document.getElementById("play");
+
+const title=document.getElementById("title");
+
+const seek=document.getElementById("seek");
+
+const current=document.getElementById("current");
+
+const duration=document.getElementById("duration");
+
+const volume=document.getElementById("volume");
+
+const shuffleBtn=document.getElementById("shuffle");
+
+const repeatBtn=document.getElementById("repeat");
+
+let playlist=[];
+
+let index=0;
+
+let shuffle=false;
+
+let repeat=false;
+
+function format(sec){
+
+if(isNaN(sec)) return "0:00";
+
+let m=Math.floor(sec/60);
+
+let s=Math.floor(sec%60);
+
+return m+":"+(s<10?"0":"")+s;
+
+}
+
+files.onchange=e=>{
+
+playlist=[];
+
+playlistDiv.innerHTML="";
+
+Array.from(e.target.files).forEach((file,i)=>{
+
+playlist.push({
+
+file:file,
+
+url:URL.createObjectURL(file)
+
+});
+
+let div=document.createElement("div");
+
+div.className="song";
+
+div.innerText=file.name;
+
+div.onclick=()=>loadSong(i,true);
+
+playlistDiv.appendChild(div);
+
+});
+
+if(playlist.length)
+
+loadSong(0,false);
+
+};
+
+function loadSong(i,autoplay){
+
+index=i;
+
+audio.src=playlist[i].url;
+
+title.innerText=playlist[i].file.name;
+
+document.querySelectorAll(".song").forEach((s,n)=>{
+
+s.classList.toggle("active",n===i);
+
+});
+
+if(autoplay){
+
+audio.play();
+
+playBtn.innerText="⏸";
+
+}else{
+
+playBtn.innerText="▶️";
+
+}
+
+}
+
+playBtn.onclick=()=>{
+
+if(!audio.src)return;
+
+if(audio.paused){
+
+audio.play();
+
+playBtn.innerText="⏸";
+
+}else{
+
+audio.pause();
+
+playBtn.innerText="▶️";
+
+}
+
+};
+
+document.getElementById("next").onclick=()=>{
+
+nextSong();
+
+};
+
+document.getElementById("prev").onclick=()=>{
+
+index--;
+
+if(index<0) index=playlist.length-1;
+
+loadSong(index,true);
+
+};
+
+function nextSong(){
+
+if(!playlist.length)return;
+
+if(shuffle){
+
+let n;
+
+do{
+
+n=Math.floor(Math.random()*playlist.length);
+
+}while(n===index&&playlist.length>1);
+
+index=n;
+
+}else{
+
+index++;
+
+if(index>=playlist.length) index=0;
+
+}
+
+loadSong(index,true);
+
+}
+
+audio.onended=()=>{
+
+if(repeat){
+
+audio.play();
+
+}else{
+
+nextSong();
+
+}
+
+};
+
+audio.ontimeupdate=()=>{
+
+seek.max=audio.duration||100;
+
+seek.value=audio.currentTime;
+
+current.innerText=format(audio.currentTime);
+
+duration.innerText=format(audio.duration);
+
+};
+
+seek.oninput=()=>{
+
+audio.currentTime=seek.value;
+
+};
+
+volume.oninput=()=>{
+
+audio.volume=volume.value;
+
+};
+
+shuffleBtn.onclick=()=>{
+
+shuffle=!shuffle;
+
+shuffleBtn.classList.toggle("active",shuffle);
+
+};
+
+repeatBtn.onclick=()=>{
+
+repeat=!repeat;
+
+repeatBtn.classList.toggle("active",repeat);
+
+};
+
+</script>
 
 </body>
 </html>
