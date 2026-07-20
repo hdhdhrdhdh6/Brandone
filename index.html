@@ -2,80 +2,159 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Loop MP3 Player</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MP3 Player</title>
+
 <style>
 body{
+    background:#111;
+    color:#fff;
+    font-family:Arial,sans-serif;
     margin:0;
-    font-family:sans-serif;
     display:flex;
     justify-content:center;
     align-items:center;
     height:100vh;
-    background:#111;
-    color:#fff;
 }
+
+.player{
+    width:420px;
+    background:#222;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 0 20px #000;
+}
+
 button{
-    font-size:1.2rem;
-    padding:15px 30px;
+    margin:4px;
+    padding:10px 15px;
+    cursor:pointer;
+}
+
+input[type=range]{
+    width:100%;
+}
+
+#filename{
+    margin:10px 0;
+    color:#7cff7c;
+    word-break:break-word;
+}
+
+#time{
+    text-align:center;
+    margin:8px 0;
 }
 </style>
 </head>
 <body>
 
-<button id="play">Start Playback</button>
+<div class="player">
 
-<audio id="player" loop preload="auto">
-    <source src="music.mp3" type="audio/mpeg">
-</audio>
+<h2>MP3 Player</h2>
+
+<input type="file" id="picker" accept="audio/*">
+
+<div id="filename">No file selected</div>
+
+<div>
+<button id="play">▶ Play</button>
+<button id="pause">⏸ Pause</button>
+<button id="stop">⏹ Stop</button>
+<button id="restart">⏮ Restart</button>
+<button id="loop">Loop: ON</button>
+</div>
+
+<p>Seek</p>
+<input type="range" id="seek" value="0" min="0" max="100">
+
+<div id="time">00:00 / 00:00</div>
+
+<p>Volume</p>
+<input type="range" id="volume" min="0" max="1" step="0.01" value="1">
+
+<audio id="audio"></audio>
+
+</div>
 
 <script>
-const player = document.getElementById("player");
-const btn = document.getElementById("play");
+const audio=document.getElementById("audio");
+const picker=document.getElementById("picker");
+const filename=document.getElementById("filename");
 
-btn.onclick = async () => {
-    try{
-        await player.play();
-        btn.textContent = "Playing...";
-        requestWakeLock();
-    }catch(e){
-        alert("Playback requires user interaction.");
-    }
+const seek=document.getElementById("seek");
+const volume=document.getElementById("volume");
+const time=document.getElementById("time");
+
+const play=document.getElementById("play");
+const pause=document.getElementById("pause");
+const stop=document.getElementById("stop");
+const restart=document.getElementById("restart");
+const loop=document.getElementById("loop");
+
+audio.loop=true;
+
+picker.onchange=()=>{
+    const file=picker.files[0];
+    if(!file) return;
+
+    filename.textContent=file.name;
+
+    audio.src=URL.createObjectURL(file);
+
+    audio.load();
+
+    audio.play();
 };
 
-// Restart if browser pauses it.
-player.addEventListener("pause", async ()=>{
-    try{
-        await player.play();
-    }catch(e){}
+play.onclick=()=>audio.play();
+
+pause.onclick=()=>audio.pause();
+
+stop.onclick=()=>{
+    audio.pause();
+    audio.currentTime=0;
+};
+
+restart.onclick=()=>{
+    audio.currentTime=0;
+    audio.play();
+};
+
+loop.onclick=()=>{
+    audio.loop=!audio.loop;
+    loop.textContent="Loop: "+(audio.loop?"ON":"OFF");
+};
+
+volume.oninput=()=>{
+    audio.volume=volume.value;
+};
+
+audio.addEventListener("loadedmetadata",()=>{
+    seek.max=Math.floor(audio.duration);
 });
 
-// Media Session support
-if("mediaSession" in navigator){
-    navigator.mediaSession.setActionHandler("pause", ()=>player.play());
-    navigator.mediaSession.setActionHandler("play", ()=>player.play());
-}
+audio.addEventListener("timeupdate",()=>{
+    seek.value=audio.currentTime;
 
-let wakeLock;
+    let c=format(audio.currentTime);
+    let d=format(audio.duration);
 
-async function requestWakeLock(){
-    if("wakeLock" in navigator){
-        try{
-            wakeLock = await navigator.wakeLock.request("screen");
-            wakeLock.addEventListener("release", ()=>requestWakeLock());
-        }catch(e){}
-    }
-}
-
-document.addEventListener("visibilitychange", ()=>{
-    if(!document.hidden){
-        requestWakeLock();
-        if(player.paused){
-            player.play().catch(()=>{});
-        }
-    }
+    time.textContent=c+" / "+d;
 });
+
+seek.oninput=()=>{
+    audio.currentTime=seek.value;
+};
+
+function format(sec){
+    if(isNaN(sec)) return "00:00";
+    let m=Math.floor(sec/60);
+    let s=Math.floor(sec%60);
+    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+}
 </script>
 
 </body>
 </html>
+
