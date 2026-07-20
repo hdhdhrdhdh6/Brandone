@@ -1,390 +1,81 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>MP3 Player</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Loop MP3 Player</title>
 <style>
-*{
-box-sizing:border-box;
-margin:0;
-padding:0;
-font-family:Arial,Helvetica,sans-serif;
-}
-
 body{
-background:#111;
-color:white;
-display:flex;
-justify-content:center;
-padding:20px;
+    margin:0;
+    font-family:sans-serif;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    background:#111;
+    color:#fff;
 }
-
-.player{
-width:420px;
-background:#1d1d1d;
-border-radius:20px;
-padding:20px;
-box-shadow:0 0 20px black;
-}
-
-h2{
-text-align:center;
-margin-bottom:15px;
-}
-
-input[type=file]{
-width:100%;
-margin-bottom:15px;
-}
-
-.now{
-font-size:18px;
-text-align:center;
-margin-bottom:10px;
-word-break:break-word;
-}
-
-.controls{
-display:flex;
-justify-content:center;
-gap:10px;
-margin:15px 0;
-flex-wrap:wrap;
-}
-
 button{
-background:#333;
-border:none;
-color:white;
-padding:10px 15px;
-border-radius:10px;
-cursor:pointer;
-font-size:16px;
-}
-
-button:hover{
-background:#555;
-}
-
-button.active{
-background:#008cff;
-}
-
-.progress{
-width:100%;
-margin:10px 0;
-}
-
-#seek{
-width:100%;
-}
-
-.time{
-display:flex;
-justify-content:space-between;
-font-size:14px;
-margin-bottom:10px;
-}
-
-.volume{
-margin-bottom:15px;
-}
-
-.volume input{
-width:100%;
-}
-
-.playlist{
-max-height:250px;
-overflow:auto;
-border-top:1px solid #444;
-padding-top:10px;
-}
-
-.song{
-padding:8px;
-cursor:pointer;
-border-radius:8px;
-}
-
-.song:hover{
-background:#333;
-}
-
-.song.active{
-background:#008cff;
+    font-size:1.2rem;
+    padding:15px 30px;
 }
 </style>
-
 </head>
 <body>
 
-<div class="player">
+<button id="play">Start Playback</button>
 
-<h2>MP3 Player</h2>
-
-<input type="file" id="files" accept="audio/*" multiple>
-
-<div class="now" id="title">
-No song loaded
-</div>
-
-<div class="progress">
-<input id="seek" type="range" value="0" min="0" max="100">
-</div>
-
-<div class="time">
-<span id="current">0:00</span>
-<span id="duration">0:00</span>
-</div>
-
-<div class="controls">
-<button id="prev">⏮</button>
-<button id="play">▶️</button>
-<button id="next">⏭</button>
-<button id="shuffle">🔀</button>
-<button id="repeat">🔁</button>
-</div>
-
-<div class="volume">
-<input id="volume" type="range" min="0" max="1" step="0.01" value="1">
-</div>
-
-<div class="playlist" id="playlist"></div>
-
-<audio id="audio"></audio>
-
-</div>
+<audio id="player" loop preload="auto">
+    <source src="music.mp3" type="audio/mpeg">
+</audio>
 
 <script>
+const player = document.getElementById("player");
+const btn = document.getElementById("play");
 
-const audio=document.getElementById("audio");
+btn.onclick = async () => {
+    try{
+        await player.play();
+        btn.textContent = "Playing...";
+        requestWakeLock();
+    }catch(e){
+        alert("Playback requires user interaction.");
+    }
+};
 
-const files=document.getElementById("files");
-
-const playlistDiv=document.getElementById("playlist");
-
-const playBtn=document.getElementById("play");
-
-const title=document.getElementById("title");
-
-const seek=document.getElementById("seek");
-
-const current=document.getElementById("current");
-
-const duration=document.getElementById("duration");
-
-const volume=document.getElementById("volume");
-
-const shuffleBtn=document.getElementById("shuffle");
-
-const repeatBtn=document.getElementById("repeat");
-
-let playlist=[];
-
-let index=0;
-
-let shuffle=false;
-
-let repeat=false;
-
-function format(sec){
-
-if(isNaN(sec)) return "0:00";
-
-let m=Math.floor(sec/60);
-
-let s=Math.floor(sec%60);
-
-return m+":"+(s<10?"0":"")+s;
-
-}
-
-files.onchange=e=>{
-
-playlist=[];
-
-playlistDiv.innerHTML="";
-
-Array.from(e.target.files).forEach((file,i)=>{
-
-playlist.push({
-
-file:file,
-
-url:URL.createObjectURL(file)
-
+// Restart if browser pauses it.
+player.addEventListener("pause", async ()=>{
+    try{
+        await player.play();
+    }catch(e){}
 });
 
-let div=document.createElement("div");
+// Media Session support
+if("mediaSession" in navigator){
+    navigator.mediaSession.setActionHandler("pause", ()=>player.play());
+    navigator.mediaSession.setActionHandler("play", ()=>player.play());
+}
 
-div.className="song";
+let wakeLock;
 
-div.innerText=file.name;
+async function requestWakeLock(){
+    if("wakeLock" in navigator){
+        try{
+            wakeLock = await navigator.wakeLock.request("screen");
+            wakeLock.addEventListener("release", ()=>requestWakeLock());
+        }catch(e){}
+    }
+}
 
-div.onclick=()=>loadSong(i,true);
-
-playlistDiv.appendChild(div);
-
+document.addEventListener("visibilitychange", ()=>{
+    if(!document.hidden){
+        requestWakeLock();
+        if(player.paused){
+            player.play().catch(()=>{});
+        }
+    }
 });
-
-if(playlist.length)
-
-loadSong(0,false);
-
-};
-
-function loadSong(i,autoplay){
-
-index=i;
-
-audio.src=playlist[i].url;
-
-title.innerText=playlist[i].file.name;
-
-document.querySelectorAll(".song").forEach((s,n)=>{
-
-s.classList.toggle("active",n===i);
-
-});
-
-if(autoplay){
-
-audio.play();
-
-playBtn.innerText="⏸";
-
-}else{
-
-playBtn.innerText="▶️";
-
-}
-
-}
-
-playBtn.onclick=()=>{
-
-if(!audio.src)return;
-
-if(audio.paused){
-
-audio.play();
-
-playBtn.innerText="⏸";
-
-}else{
-
-audio.pause();
-
-playBtn.innerText="▶️";
-
-}
-
-};
-
-document.getElementById("next").onclick=()=>{
-
-nextSong();
-
-};
-
-document.getElementById("prev").onclick=()=>{
-
-index--;
-
-if(index<0) index=playlist.length-1;
-
-loadSong(index,true);
-
-};
-
-function nextSong(){
-
-if(!playlist.length)return;
-
-if(shuffle){
-
-let n;
-
-do{
-
-n=Math.floor(Math.random()*playlist.length);
-
-}while(n===index&&playlist.length>1);
-
-index=n;
-
-}else{
-
-index++;
-
-if(index>=playlist.length) index=0;
-
-}
-
-loadSong(index,true);
-
-}
-
-audio.onended=()=>{
-
-if(repeat){
-
-audio.play();
-
-}else{
-
-nextSong();
-
-}
-
-};
-
-audio.ontimeupdate=()=>{
-
-seek.max=audio.duration||100;
-
-seek.value=audio.currentTime;
-
-current.innerText=format(audio.currentTime);
-
-duration.innerText=format(audio.duration);
-
-};
-
-seek.oninput=()=>{
-
-audio.currentTime=seek.value;
-
-};
-
-volume.oninput=()=>{
-
-audio.volume=volume.value;
-
-};
-
-shuffleBtn.onclick=()=>{
-
-shuffle=!shuffle;
-
-shuffleBtn.classList.toggle("active",shuffle);
-
-};
-
-repeatBtn.onclick=()=>{
-
-repeat=!repeat;
-
-repeatBtn.classList.toggle("active",repeat);
-
-};
-
 </script>
-<iframe src="https://www.pornhub.com/embed/69a04458666b1" frameborder="0" width="560" height="315" scrolling="no" allowfullscreen></iframe>
-<iframe src="https://www.xnxx.com/embedframe/
+
 </body>
 </html>
