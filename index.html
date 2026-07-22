@@ -1,160 +1,145 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MP3 Player</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Matrix Words Background</title>
 
 <style>
-body{
-    background:#111;
-    color:#fff;
-    font-family:Arial,sans-serif;
+*{
     margin:0;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+    padding:0;
+    box-sizing:border-box;
 }
 
-.player{
-    width:420px;
-    background:#222;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 0 20px #000;
-}
-
-button{
-    margin:4px;
-    padding:10px 15px;
-    cursor:pointer;
-}
-
-input[type=range]{
+html,body{
     width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#000;
+    font-family:Consolas,Monaco,monospace;
 }
 
-#filename{
-    margin:10px 0;
-    color:#7cff7c;
-    word-break:break-word;
+.container{
+    display:flex;
+    width:100%;
+    height:100%;
 }
 
-#time{
-    text-align:center;
-    margin:8px 0;
+.left{
+    width:66.666%;
+    position:relative;
+    overflow:hidden;
+    background:#020202;
+}
+
+.right{
+    width:33.333%;
+    background:#000;
+}
+
+canvas{
+    position:absolute;
+    inset:0;
 }
 </style>
 </head>
 <body>
 
-<div class="player">
-
-<h2>MP3 Player</h2>
-
-<input type="file" id="picker" accept="audio/*">
-
-<div id="filename">No file selected</div>
-
-<div>
-<button id="play">▶ Play</button>
-<button id="pause">⏸ Pause</button>
-<button id="stop">⏹ Stop</button>
-<button id="restart">⏮ Restart</button>
-<button id="loop">Loop: ON</button>
-</div>
-
-<p>Seek</p>
-<input type="range" id="seek" value="0" min="0" max="100">
-
-<div id="time">00:00 / 00:00</div>
-
-<p>Volume</p>
-<input type="range" id="volume" min="0" max="1" step="0.01" value="1">
-
-<audio id="audio"></audio>
-
+<div class="container">
+    <div class="left">
+        <canvas id="matrix"></canvas>
+    </div>
+    <div class="right"></div>
 </div>
 
 <script>
-const audio=document.getElementById("audio");
-const picker=document.getElementById("picker");
-const filename=document.getElementById("filename");
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
 
-const seek=document.getElementById("seek");
-const volume=document.getElementById("volume");
-const time=document.getElementById("time");
+function resize(){
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
 
-const play=document.getElementById("play");
-const pause=document.getElementById("pause");
-const stop=document.getElementById("stop");
-const restart=document.getElementById("restart");
-const loop=document.getElementById("loop");
+    fontSize = 18;
+    columns = Math.floor(canvas.width / fontSize);
 
-audio.loop=true;
-
-picker.onchange=()=>{
-    const file=picker.files[0];
-    if(!file) return;
-
-    filename.textContent=file.name;
-
-    audio.src=URL.createObjectURL(file);
-
-    audio.load();
-
-    audio.play();
-};
-
-play.onclick=()=>audio.play();
-
-pause.onclick=()=>audio.pause();
-
-stop.onclick=()=>{
-    audio.pause();
-    audio.currentTime=0;
-};
-
-restart.onclick=()=>{
-    audio.currentTime=0;
-    audio.play();
-};
-
-loop.onclick=()=>{
-    audio.loop=!audio.loop;
-    loop.textContent="Loop: "+(audio.loop?"ON":"OFF");
-};
-
-volume.oninput=()=>{
-    audio.volume=volume.value;
-};
-
-audio.addEventListener("loadedmetadata",()=>{
-    seek.max=Math.floor(audio.duration);
-});
-
-audio.addEventListener("timeupdate",()=>{
-    seek.value=audio.currentTime;
-
-    let c=format(audio.currentTime);
-    let d=format(audio.duration);
-
-    time.textContent=c+" / "+d;
-});
-
-seek.oninput=()=>{
-    audio.currentTime=seek.value;
-};
-
-function format(sec){
-    if(isNaN(sec)) return "00:00";
-    let m=Math.floor(sec/60);
-    let s=Math.floor(sec%60);
-    return String(m).padStart(2,"0")+":"+String(s).padStart(2,"0");
+    drops = [];
+    for(let i=0;i<columns;i++){
+        drops[i]=Math.random()*-100;
+    }
 }
+
+let fontSize = 18;
+let columns = 0;
+let drops = [];
+
+window.addEventListener("resize",resize);
+resize();
+
+const words = [
+"future","dream","code","vision","light","energy","water","forest",
+"ocean","planet","galaxy","create","imagine","freedom","knowledge",
+"wisdom","science","nature","motion","gravity","signal","network",
+"pixel","binary","system","matrix","shadow","echo","time","space",
+"velocity","horizon","quantum","memory","process","dynamic","electric",
+"power","focus","clarity","innovation","logic","design","machine",
+"human","language","learning","progress","explore","discover","truth",
+"strength","courage","hope","peace","inspire","future","journey",
+"adventure","cosmos","infinite","beyond","origin","spark","stream",
+"neural","algorithm","computer","vision","creative","resilience",
+"curiosity","connection","harmony","balance","moment","possibility"
+];
+
+function randomWord(){
+    return words[Math.floor(Math.random()*words.length)];
+}
+
+function draw(){
+
+    ctx.fillStyle = "rgba(0,0,0,0.08)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.font = fontSize + "px Consolas";
+
+    for(let i=0;i<drops.length;i++){
+
+        const word = randomWord();
+        const x = i * fontSize;
+        const y = drops[i] * fontSize;
+
+        // glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "#00ff66";
+
+        // bright leading word
+        ctx.fillStyle = "#c8ffd8";
+        ctx.fillText(word,x,y);
+
+        // trailing words
+        for(let j=1;j<5;j++){
+            ctx.globalAlpha = 0.22/j;
+            ctx.fillStyle="#00ff66";
+            ctx.fillText(
+                randomWord(),
+                x,
+                y-(j*fontSize*1.2)
+            );
+        }
+
+        ctx.globalAlpha = 1;
+
+        if(y > canvas.height && Math.random() > 0.975){
+            drops[i]=0;
+        }
+
+        drops[i]+=0.55 + Math.random()*0.6;
+    }
+}
+
+setInterval(draw,50);
 </script>
 
 </body>
 </html>
-
