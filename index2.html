@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mobile MP3 Player</title>
+
+<style>
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+background:#111;
+color:white;
+display:flex;
+justify-content:center;
+align-items:center;
+min-height:100vh;
+padding:15px;
+}
+
+.player{
+width:100%;
+max-width:500px;
+background:#1d1d1d;
+border-radius:20px;
+padding:20px;
+box-shadow:0 0 30px rgba(0,0,0,.5);
+}
+
+h2{
+text-align:center;
+margin-bottom:20px;
+}
+
+#song{
+font-size:18px;
+text-align:center;
+margin-bottom:15px;
+}
+
+.progress{
+width:100%;
+}
+
+.time{
+display:flex;
+justify-content:space-between;
+margin-top:5px;
+font-size:12px;
+}
+
+.controls{
+display:flex;
+justify-content:center;
+gap:15px;
+margin:20px 0;
+}
+
+button{
+background:#2e8bff;
+border:none;
+color:white;
+padding:15px;
+border-radius:50%;
+font-size:18px;
+width:60px;
+height:60px;
+cursor:pointer;
+}
+
+button:active{
+transform:scale(.95);
+}
+
+#playlist{
+margin-top:20px;
+list-style:none;
+max-height:250px;
+overflow:auto;
+}
+
+#playlist li{
+padding:12px;
+margin:5px 0;
+background:#333;
+border-radius:10px;
+cursor:pointer;
+}
+
+#playlist li.active{
+background:#2e8bff;
+}
+
+input[type=range]{
+width:100%;
+}
+
+.volume{
+margin-top:20px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="player">
+
+<h2>MP3 Player</h2>
+
+<div id="song">No Song</div>
+
+<input id="progress" class="progress" type="range" min="0" max="100" value="0">
+
+<div class="time">
+<span id="current">0:00</span>
+<span id="duration">0:00</span>
+</div>
+
+<div class="controls">
+<button onclick="prev()">⏮</button>
+<button onclick="toggle()">▶</button>
+<button onclick="next()">⏭</button>
+</div>
+
+<div class="volume">
+Volume
+<input id="volume" type="range" min="0" max="1" step=".01" value="1">
+</div>
+
+<ul id="playlist"></ul>
+
+<audio id="audio"></audio>
+
+</div>
+
+<script>
+
+const tracks=[
+{
+title:"Song 1",
+src:"song1.mp3"
+},
+{
+title:"Song 2",
+src:"song2.mp3"
+},
+{
+title:"Song 3",
+src:"song3.mp3"
+}
+];
+
+const audio=document.getElementById("audio");
+const list=document.getElementById("playlist");
+const song=document.getElementById("song");
+const progress=document.getElementById("progress");
+const current=document.getElementById("current");
+const duration=document.getElementById("duration");
+const volume=document.getElementById("volume");
+
+let index=0;
+let fading=false;
+
+tracks.forEach((t,i)=>{
+const li=document.createElement("li");
+li.innerHTML=t.title;
+li.onclick=()=>load(i,true);
+list.appendChild(li);
+});
+
+function updatePlaylist(){
+[...list.children].forEach((li,i)=>{
+li.classList.toggle("active",i===index);
+});
+}
+
+function load(i,play=true){
+index=i;
+audio.src=tracks[index].src;
+song.innerHTML=tracks[index].title;
+updatePlaylist();
+
+if(play){
+audio.volume=0;
+audio.play().catch(()=>{});
+fadeIn();
+}
+}
+
+async function fadeIn(){
+fading=true;
+for(let v=0;v<=volume.value;v+=0.02){
+audio.volume=Math.min(v,volume.value);
+await sleep(30);
+}
+audio.volume=volume.value;
+fading=false;
+}
+
+async function fadeOut(){
+fading=true;
+for(let v=audio.volume;v>=0;v-=0.02){
+audio.volume=v;
+await sleep(30);
+}
+fading=false;
+}
+
+function sleep(ms){
+return new Promise(r=>setTimeout(r,ms));
+}
+
+async function next(){
+
+if(fading)return;
+
+await fadeOut();
+
+index++;
+
+if(index>=tracks.length)
+index=0;
+
+load(index,true);
+
+}
+
+async function prev(){
+
+if(fading)return;
+
+await fadeOut();
+
+index--;
+
+if(index<0)
+index=tracks.length-1;
+
+load(index,true);
+
+}
+
+function toggle(){
+
+if(audio.paused){
+audio.play();
+}else{
+audio.pause();
+}
+
+}
+
+audio.addEventListener("ended",next);
+
+audio.addEventListener("loadedmetadata",()=>{
+duration.innerHTML=format(audio.duration);
+});
+
+audio.addEventListener("timeupdate",()=>{
+
+progress.max=audio.duration||0;
+progress.value=audio.currentTime;
+
+current.innerHTML=format(audio.currentTime);
+
+});
+
+progress.oninput=()=>{
+audio.currentTime=progress.value;
+};
+
+volume.oninput=()=>{
+audio.volume=volume.value;
+};
+
+function format(s){
+
+if(isNaN(s))
+return "0:00";
+
+let m=Math.floor(s/60);
+
+let sec=Math.floor(s%60);
+
+if(sec<10)
+sec="0"+sec;
+
+return m+":"+sec;
+
+}
+
+load(0,false);
+
+/* 1ms watchdog */
+
+setInterval(()=>{
+
+if(
+!audio.paused &&
+audio.readyState>=2 &&
+audio.currentTime>0 &&
+audio.ended===false
+){
+
+// Playing normally
+
+return;
+
+}
+
+if(
+audio.paused &&
+!audio.ended &&
+document.hasFocus()
+){
+
+audio.play().catch(()=>{});
+
+}
+
+},1);
+
+</script>
+
+</body>
+</html>
