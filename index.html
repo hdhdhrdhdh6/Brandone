@@ -3,114 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wayback MP4 Finder</title>
+<title>Internet Archive MP4 Search</title>
 
 <style>
 body{
     font-family:Arial,sans-serif;
-    background:#111;
-    color:white;
-    margin:40px;
+    background:#121212;
+    color:#fff;
+    margin:30px;
+}
+h1{
+    color:#4fc3f7;
 }
 input{
     width:70%;
-    padding:10px;
+    padding:12px;
     font-size:16px;
+    border:none;
+    border-radius:6px;
 }
 button{
-    padding:10px 18px;
+    padding:12px 18px;
     font-size:16px;
+    border:none;
+    border-radius:6px;
+    background:#4fc3f7;
     cursor:pointer;
 }
+button:hover{
+    background:#29b6f6;
+}
 .result{
-    margin-top:20px;
-    padding:12px;
-    background:#222;
+    background:#1f1f1f;
+    padding:15px;
+    margin-top:15px;
     border-radius:8px;
 }
-a{
-    color:#4fc3ff;
+video{
+    max-width:100%;
+    margin-top:10px;
 }
-small{
-    color:#aaa;
+a{
+    color:#81d4fa;
 }
 </style>
 </head>
 <body>
 
-<h2>Wayback Machine MP4 Finder</h2>
+<h1>Internet Archive MP4 Search</h1>
 
-<p>Enter a URL or directory.</p>
+<p>Search for videos by keyword.</p>
 
-<input id="url" placeholder="https://example.com/videos/">
-<button onclick="search()">Search</button>
+<input id="search" placeholder="minecraft">
+<button onclick="searchVideos()">Search</button>
 
 <div id="results"></div>
 
 <script>
+async function searchVideos(){
 
-async function search(){
+    const term=document.getElementById("search").value.trim();
 
-    let input=document.getElementById("url").value.trim();
-
-    if(!input){
-        alert("Enter a URL");
+    if(!term){
+        alert("Enter a search term.");
         return;
     }
 
-    if(!input.endsWith("*")){
-        if(!input.endsWith("/"))
-            input+="/";
-        input+="*";
-    }
-
-    const api=
-"https://web.archive.org/cdx/search/cdx?url="+
-encodeURIComponent(input)+
-"&output=json&fl=timestamp,original,statuscode,mimetype&filter=mimetype:video/mp4";
-
     const results=document.getElementById("results");
-    results.innerHTML="Searching...";
+    results.innerHTML="<p>Searching...</p>";
+
+    const api="https://archive.org/advancedsearch.php?q="+
+        encodeURIComponent(term+" AND mediatype:movies")+
+        "&fl[]=identifier,title&rows=30&page=1&output=json";
 
     try{
 
         const res=await fetch(api);
-
         const data=await res.json();
 
-        if(data.length<=1){
-            results.innerHTML="<p>No MP4 archives found.</p>";
-            return;
+        let html="";
+
+        for(const item of data.response.docs){
+
+            try{
+
+                const meta=await fetch("https://archive.org/metadata/"+item.identifier);
+                const metadata=await meta.json();
+
+                if(!metadata.files) continue;
+
+                for(const file of metadata.files){
+
+                    if(file.name && file.name.toLowerCase().endsWith(".mp4")){
+
+                        const url="https://archive.org/download/"
+                            +item.identifier+"/"
+                            +encodeURIComponent(file.name);
+
+                        html+=`
+                        <div class="result">
+                            <h3>${item.title || item.identifier}</h3>
+                            <a href="${url}" target="_blank">${file.name}</a><br><br>
+                            <video controls src="${url}"></video>
+                        </div>
+                        `;
+
+                    }
+
+                }
+
+            }catch(e){}
+
         }
 
-        let html="<h3>Results</h3>";
-
-        for(let i=1;i<data.length;i++){
-
-            let row=data[i];
-
-            let timestamp=row[0];
-            let original=row[1];
-            let status=row[2];
-
-            let archive="https://web.archive.org/web/"+timestamp+"/"+original;
-
-            html+=`
-            <div class="result">
-            <a href="${archive}" target="_blank">${original}</a><br>
-            <small>${timestamp} | HTTP ${status}</small>
-            </div>
-            `;
+        if(html===""){
+            html="<p>No MP4 files found.</p>";
         }
 
         results.innerHTML=html;
 
-    }catch(e){
-        results.innerHTML="Error: "+e;
+    }catch(err){
+
+        results.innerHTML="<p>Error: "+err+"</p>";
+
     }
 
 }
-
 </script>
 
 </body>
