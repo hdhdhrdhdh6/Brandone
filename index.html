@@ -2,169 +2,115 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>MP3 Joiner</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wayback MP4 Finder</title>
+
 <style>
 body{
     font-family:Arial,sans-serif;
-    max-width:700px;
-    margin:40px auto;
-    padding:20px;
+    background:#111;
+    color:white;
+    margin:40px;
+}
+input{
+    width:70%;
+    padding:10px;
+    font-size:16px;
 }
 button{
-    padding:10px 20px;
-    margin-top:10px;
+    padding:10px 18px;
+    font-size:16px;
+    cursor:pointer;
 }
-#status{
+.result{
     margin-top:20px;
-    white-space:pre-wrap;
+    padding:12px;
+    background:#222;
+    border-radius:8px;
+}
+a{
+    color:#4fc3ff;
+}
+small{
+    color:#aaa;
 }
 </style>
 </head>
 <body>
 
-<h2>MP3 Joiner</h2>
+<h2>Wayback Machine MP4 Finder</h2>
 
-<input type="file" id="files" accept=".mp3,audio/mpeg" multiple>
-<br>
-<button id="merge">Merge & Download</button>
+<p>Enter a URL or directory.</p>
 
-<div id="status"></div>
+<input id="url" placeholder="https://example.com/videos/">
+<button onclick="search()">Search</button>
 
-<script src="https://cdn.jsdelivr.net/npm/lamejs@1.2.1/lame.min.js"></script>
+<div id="results"></div>
 
 <script>
-const status = document.getElementById("status");
 
-function log(msg){
-    status.textContent += msg + "\n";
-}
+async function search(){
 
-document.getElementById("merge").onclick = async () => {
+    let input=document.getElementById("url").value.trim();
 
-    status.textContent="";
-
-    const fileInput=document.getElementById("files");
-
-    if(fileInput.files.length===0){
-        alert("Choose some MP3 files.");
+    if(!input){
+        alert("Enter a URL");
         return;
     }
 
-    const audioCtx=new AudioContext();
-
-    const buffers=[];
-
-    for(const file of fileInput.files){
-        log("Loading "+file.name);
-        const arr=await file.arrayBuffer();
-        const buf=await audioCtx.decodeAudioData(arr);
-        buffers.push(buf);
+    if(!input.endsWith("*")){
+        if(!input.endsWith("/"))
+            input+="/";
+        input+="*";
     }
 
-    const sampleRate=buffers[0].sampleRate;
-    const channels=Math.min(2,buffers[0].numberOfChannels);
+    const api=
+"https://web.archive.org/cdx/search/cdx?url="+
+encodeURIComponent(input)+
+"&output=json&fl=timestamp,original,statuscode,mimetype&filter=mimetype:video/mp4";
 
-    let totalLength=0;
+    const results=document.getElementById("results");
+    results.innerHTML="Searching...";
 
-    buffers.forEach(b=>{
-        totalLength+=b.length;
-    });
+    try{
 
-    const output=audioCtx.createBuffer(
-        channels,
-        totalLength,
-        sampleRate
-    );
+        const res=await fetch(api);
 
-    let offset=0;
+        const data=await res.json();
 
-    for(const b of buffers){
-        for(let c=0;c<channels;c++){
-            output.getChannelData(c).set(
-                b.getChannelData(c),
-                offset
-            );
+        if(data.length<=1){
+            results.innerHTML="<p>No MP4 archives found.</p>";
+            return;
         }
-        offset+=b.length;
+
+        let html="<h3>Results</h3>";
+
+        for(let i=1;i<data.length;i++){
+
+            let row=data[i];
+
+            let timestamp=row[0];
+            let original=row[1];
+            let status=row[2];
+
+            let archive="https://web.archive.org/web/"+timestamp+"/"+original;
+
+            html+=`
+            <div class="result">
+            <a href="${archive}" target="_blank">${original}</a><br>
+            <small>${timestamp} | HTTP ${status}</small>
+            </div>
+            `;
+        }
+
+        results.innerHTML=html;
+
+    }catch(e){
+        results.innerHTML="Error: "+e;
     }
 
-    log("Encoding MP3...");
+}
 
-    const mp3encoder=new lamejs.Mp3Encoder(
-        channels,
-        sampleRate,
-        192
-    );
-
-    const samples=1152;
-    const mp3Data=[];
-
-    if(channels===1){
-
-        const left=output.getChannelData(0);
-
-        for(let i=0;i<left.length;i+=samples){
-
-            const chunk=left.subarray(i,i+samples);
-
-            const pcm=new Int16Array(chunk.length);
-
-            for(let j=0;j<chunk.length;j++){
-                let s=Math.max(-1,Math.min(1,chunk[j]));
-                pcm[j]=s<0?s*32768:s*32767;
-            }
-
-            const mp3buf=mp3encoder.encodeBuffer(pcm);
-
-            if(mp3buf.length)
-                mp3Data.push(new Uint8Array(mp3buf));
-        }
-
-    }else{
-
-        const left=output.getChannelData(0);
-        const right=output.getChannelData(1);
-
-        for(let i=0;i<left.length;i+=samples){
-
-            const lChunk=left.subarray(i,i+samples);
-            const rChunk=right.subarray(i,i+samples);
-
-            const lPCM=new Int16Array(lChunk.length);
-            const rPCM=new Int16Array(rChunk.length);
-
-            for(let j=0;j<lChunk.length;j++){
-
-                let l=Math.max(-1,Math.min(1,lChunk[j]));
-                let r=Math.max(-1,Math.min(1,rChunk[j]));
-
-                lPCM[j]=l<0?l*32768:l*32767;
-                rPCM[j]=r<0?r*32768:r*32767;
-            }
-
-            const mp3buf=mp3encoder.encodeBuffer(lPCM,rPCM);
-
-            if(mp3buf.length)
-                mp3Data.push(new Uint8Array(mp3buf));
-        }
-    }
-
-    const end=mp3encoder.flush();
-
-    if(end.length)
-        mp3Data.push(new Uint8Array(end));
-
-    const blob=new Blob(mp3Data,{type:"audio/mpeg"});
-
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(blob);
-    a.download="merged.mp3";
-    a.click();
-
-    URL.revokeObjectURL(a.href);
-
-    log("Done!");
-};
 </script>
 
 </body>
